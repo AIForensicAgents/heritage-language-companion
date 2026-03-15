@@ -1,0 +1,905 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+<title>Heritage Language Companion</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        warm: { 50:'#FFF8F0', 100:'#FFEDD5', 200:'#FED7AA', 300:'#FDBA74', 400:'#FB923C', 500:'#F97316', 600:'#EA580C', 700:'#C2410C' },
+        sage: { 50:'#F0F5F0', 100:'#D4E4D4', 200:'#A8C9A8', 300:'#7DAE7D', 400:'#5A935A', 500:'#3D7A3D', 600:'#2D5F2D', 700:'#1E441E' },
+        cream: '#FFFBF5',
+        bark: '#4A3728',
+      },
+      fontFamily: {
+        serif: ['Georgia', 'Cambria', 'serif'],
+        sans: ['system-ui', '-apple-system', 'sans-serif'],
+      }
+    }
+  }
+}
+</script>
+<style>
+  * { -webkit-tap-highlight-color: transparent; }
+  html { font-size: 18px; scroll-behavior: smooth; }
+  body { background: #FFFBF5; }
+  .btn-touch { min-height: 52px; min-width: 52px; }
+  .fade-in { animation: fadeIn 0.4s ease-in; }
+  @keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+  @keyframes pulse-gentle { 0%,100% { transform:scale(1); } 50% { transform:scale(1.03); } }
+  .pulse-gentle { animation: pulse-gentle 2s ease-in-out infinite; }
+  .chat-bubble { max-width: 85%; word-wrap: break-word; }
+  .speed-slider::-webkit-slider-thumb { width:28px; height:28px; }
+  .recording-pulse { animation: rec-pulse 1.2s ease-in-out infinite; }
+  @keyframes rec-pulse { 0%,100% { box-shadow:0 0 0 0 rgba(220,38,38,0.4); } 50% { box-shadow:0 0 0 12px rgba(220,38,38,0); } }
+  textarea, input, select { font-size: 18px !important; }
+  .tab-active { border-bottom: 3px solid #3D7A3D; color: #3D7A3D; font-weight: 700; }
+  .overlay { background: rgba(0,0,0,0.4); }
+</style>
+</head>
+<body class="font-serif text-bark min-h-screen">
+
+<!-- Global AI tracking -->
+<script>
+window.aiTotalInputTokens = 0;
+window.aiTotalOutputTokens = 0;
+window.aiTotalTime = 0;
+window.aiTimeByAlias = {};
+</script>
+
+<div id="app" class="max-w-lg mx-auto pb-24">
+
+  <!-- Header -->
+  <header class="bg-sage-600 text-white px-5 py-4 rounded-b-2xl shadow-lg sticky top-0 z-50">
+    <div class="flex items-center justify-between">
+      <div>
+        <h1 class="text-2xl font-bold tracking-tight flex items-center gap-2">🌿 Heritage Companion</h1>
+        <p class="text-sage-100 text-sm mt-0.5">Preserve your language, share your stories</p>
+      </div>
+      <button onclick="openSettings()" class="btn-touch p-2 rounded-full hover:bg-sage-500 transition" aria-label="Settings">
+        <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><circle cx="12" cy="12" r="3"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- Onboarding -->
+  <div id="onboarding" class="hidden px-5 py-6 fade-in">
+    <div class="bg-white rounded-2xl shadow-md p-6 border border-sage-100">
+      <h2 class="text-xl font-bold text-sage-700 mb-3">👋 Welcome, dear friend!</h2>
+      <p class="text-bark mb-4 leading-relaxed">Let's set up your Heritage Language Companion so it feels just right for you.</p>
+      
+      <label class="block mb-4">
+        <span class="text-sage-600 font-semibold block mb-1">Your Name</span>
+        <input id="ob-name" type="text" placeholder="e.g., Maria, Grandfather Chen…" class="w-full border-2 border-sage-200 rounded-xl px-4 py-3 focus:border-sage-500 focus:outline-none bg-warm-50">
+      </label>
+
+      <label class="block mb-4">
+        <span class="text-sage-600 font-semibold block mb-1">Your Heritage Language</span>
+        <input id="ob-language" type="text" placeholder="e.g., Tagalog, Yiddish, Cantonese…" class="w-full border-2 border-sage-200 rounded-xl px-4 py-3 focus:border-sage-500 focus:outline-none bg-warm-50">
+      </label>
+
+      <label class="block mb-4">
+        <span class="text-sage-600 font-semibold block mb-1">Your Comfort Level</span>
+        <select id="ob-level" class="w-full border-2 border-sage-200 rounded-xl px-4 py-3 focus:border-sage-500 focus:outline-none bg-warm-50">
+          <option value="beginner">🌱 Beginner — I remember a few words</option>
+          <option value="intermediate">🌿 Intermediate — I can hold simple conversations</option>
+          <option value="advanced">🌳 Advanced — I'm fairly fluent but want to practice</option>
+        </select>
+      </label>
+
+      <label class="block mb-4">
+        <span class="text-sage-600 font-semibold block mb-1">Speaking Speed Preference</span>
+        <input id="ob-speed" type="range" min="1" max="5" value="2" class="w-full speed-slider accent-sage-500">
+        <div class="flex justify-between text-sm text-sage-400 mt-1">
+          <span>🐢 Very Slow</span><span>🐇 Natural</span>
+        </div>
+      </label>
+
+      <label class="block mb-6">
+        <span class="text-sage-600 font-semibold block mb-1">Family Topics / Memories to Practice</span>
+        <textarea id="ob-topics" rows="3" placeholder="e.g., Grandmother's recipes, village stories, holiday greetings, lullabies…" class="w-full border-2 border-sage-200 rounded-xl px-4 py-3 focus:border-sage-500 focus:outline-none bg-warm-50 resize-none"></textarea>
+      </label>
+
+      <button onclick="completeOnboarding()" class="btn-touch w-full bg-sage-500 hover:bg-sage-600 text-white font-bold py-4 rounded-xl text-lg transition shadow-md pulse-gentle">
+        🌿 Begin My Journey
+      </button>
+    </div>
+  </div>
+
+  <!-- Main Content (tabs) -->
+  <div id="main-content" class="hidden">
+
+    <!-- Tab Navigation -->
+    <nav class="flex border-b border-sage-100 bg-white sticky top-[76px] z-40 px-2">
+      <button onclick="switchTab('converse')" id="tab-converse" class="flex-1 btn-touch py-3 text-center text-sm font-semibold text-sage-400 transition tab-active">💬 Converse</button>
+      <button onclick="switchTab('stories')" id="tab-stories" class="flex-1 btn-touch py-3 text-center text-sm font-semibold text-sage-400 transition">📖 Stories</button>
+      <button onclick="switchTab('phrases')" id="tab-phrases" class="flex-1 btn-touch py-3 text-center text-sm font-semibold text-sage-400 transition">🗣️ Phrases</button>
+      <button onclick="switchTab('progress')" id="tab-progress" class="flex-1 btn-touch py-3 text-center text-sm font-semibold text-sage-400 transition">📊 Progress</button>
+    </nav>
+
+    <!-- CONVERSE TAB -->
+    <div id="panel-converse" class="px-4 py-4 fade-in">
+      <div class="mb-3 flex items-center gap-2">
+        <span class="text-sage-600 font-semibold">🎭 Practice Mode:</span>
+        <select id="converse-mode" onchange="updateConversationMode()" class="border border-sage-200 rounded-lg px-3 py-2 bg-white text-sm">
+          <option value="freeChat">Free Conversation</option>
+          <option value="familyDialog">Family Dialog Practice</option>
+          <option value="memoryShare">Memory Sharing</option>
+          <option value="dailyPhrases">Daily Phrases</option>
+        </select>
+      </div>
+
+      <!-- Chat Area -->
+      <div id="chat-area" class="bg-white rounded-2xl border border-sage-100 shadow-sm min-h-[300px] max-h-[55vh] overflow-y-auto p-4 space-y-3 mb-3">
+        <div id="chat-welcome" class="text-center py-8 text-sage-400">
+          <p class="text-4xl mb-2">🌿</p>
+          <p class="text-lg font-semibold">Ready to practice?</p>
+          <p class="text-sm mt-1">Type a message or tap the microphone to speak</p>
+        </div>
+      </div>
+
+      <!-- Input Area -->
+      <div class="flex gap-2 items-end">
+        <div class="flex-1 relative">
+          <textarea id="chat-input" rows="2" placeholder="Type in your heritage language or English…" class="w-full border-2 border-sage-200 rounded-xl px-4 py-3 pr-12 focus:border-sage-500 focus:outline-none bg-warm-50 resize-none text-base"></textarea>
+        </div>
+        <button onclick="sendMessage()" class="btn-touch bg-sage-500 hover:bg-sage-600 text-white rounded-xl p-3 transition shadow" aria-label="Send">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
+        </button>
+      </div>
+
+      <!-- Speed control for this session -->
+      <div class="mt-3 flex items-center gap-3 bg-sage-50 rounded-xl px-4 py-2">
+        <span class="text-sm text-sage-600">🐢</span>
+        <input id="session-speed" type="range" min="1" max="5" value="2" class="flex-1 speed-slider accent-sage-500" onchange="updateSessionSpeed(this.value)">
+        <span class="text-sm text-sage-600">🐇</span>
+        <span id="speed-label" class="text-xs text-sage-500 w-16 text-right">Slow</span>
+      </div>
+    </div>
+
+    <!-- STORIES TAB -->
+    <div id="panel-stories" class="px-4 py-4 hidden fade-in">
+      <h2 class="text-xl font-bold text-sage-700 mb-3">📖 Storytelling Corner</h2>
+      <p class="text-sage-500 mb-4 leading-relaxed">Share a memory or get a culturally meaningful storytelling prompt. Your stories are preserved here for your family. 💝</p>
+
+      <button onclick="generateStoryPrompt()" class="btn-touch w-full bg-warm-400 hover:bg-warm-500 text-white font-bold py-4 rounded-xl text-lg transition shadow mb-4">
+        ✨ Give Me a Story Prompt
+      </button>
+
+      <div id="story-prompt-area" class="hidden bg-warm-50 rounded-xl p-4 border border-warm-200 mb-4">
+        <p id="story-prompt-text" class="text-bark leading-relaxed text-lg"></p>
+        <p id="story-prompt-translation" class="text-sage-500 mt-2 text-sm italic"></p>
+      </div>
+
+      <div class="mb-4">
+        <label class="block text-sage-600 font-semibold mb-1">📝 Your Story / Memory</label>
+        <textarea id="story-input" rows="5" placeholder="Write or dictate your story here… in your heritage language or English, or mix both!" class="w-full border-2 border-sage-200 rounded-xl px-4 py-3 focus:border-sage-500 focus:outline-none bg-white resize-none"></textarea>
+      </div>
+
+      <button onclick="saveStory()" class="btn-touch w-full bg-sage-500 hover:bg-sage-600 text-white font-bold py-3 rounded-xl transition shadow mb-4">
+        💾 Save This Story
+      </button>
+
+      <div id="saved-stories" class="space-y-3"></div>
+    </div>
+
+    <!-- PHRASES TAB -->
+    <div id="panel-phrases" class="px-4 py-4 hidden fade-in">
+      <h2 class="text-xl font-bold text-sage-700 mb-3">🗣️ Everyday Family Phrases</h2>
+      <p class="text-sage-500 mb-4">Useful phrases for talking with family. Tap any phrase to practice it in conversation.</p>
+
+      <div class="flex gap-2 mb-4 flex-wrap">
+        <button onclick="loadPhraseCategory('greetings')" class="btn-touch px-4 py-2 bg-sage-100 hover:bg-sage-200 rounded-full text-sage-700 text-sm font-semibold transition phrase-cat-btn" data-cat="greetings">👋 Greetings</button>
+        <button onclick="loadPhraseCategory('family')" class="btn-touch px-4 py-2 bg-sage-100 hover:bg-sage-200 rounded-full text-sage-700 text-sm font-semibold transition phrase-cat-btn" data-cat="family">👨‍👩‍👧 Family</button>
+        <button onclick="loadPhraseCategory('food')" class="btn-touch px-4 py-2 bg-sage-100 hover:bg-sage-200 rounded-full text-sage-700 text-sm font-semibold transition phrase-cat-btn" data-cat="food">🍲 Food</button>
+        <button onclick="loadPhraseCategory('feelings')" class="btn-touch px-4 py-2 bg-sage-100 hover:bg-sage-200 rounded-full text-sage-700 text-sm font-semibold transition phrase-cat-btn" data-cat="feelings">❤️ Feelings</button>
+        <button onclick="loadPhraseCategory('traditions')" class="btn-touch px-4 py-2 bg-sage-100 hover:bg-sage-200 rounded-full text-sage-700 text-sm font-semibold transition phrase-cat-btn" data-cat="traditions">🎊 Traditions</button>
+      </div>
+
+      <div id="phrases-loading" class="hidden text-center py-8">
+        <div class="inline-block w-8 h-8 border-4 border-sage-300 border-t-sage-600 rounded-full animate-spin"></div>
+        <p class="text-sage-500 mt-2">Preparing phrases for you…</p>
+      </div>
+
+      <div id="phrases-list" class="space-y-3"></div>
+    </div>
+
+    <!-- PROGRESS TAB -->
+    <div id="panel-progress" class="px-4 py-4 hidden fade-in">
+      <h2 class="text-xl font-bold text-sage-700 mb-3">📊 Your Journey</h2>
+
+      <div class="grid grid-cols-2 gap-3 mb-5">
+        <div class="bg-white rounded-xl p-4 border border-sage-100 shadow-sm text-center">
+          <p class="text-3xl font-bold text-sage-600" id="stat-sessions">0</p>
+          <p class="text-sm text-sage-400">Sessions</p>
+        </div>
+        <div class="bg-white rounded-xl p-4 border border-sage-100 shadow-sm text-center">
+          <p class="text-3xl font-bold text-warm-500" id="stat-messages">0</p>
+          <p class="text-sm text-sage-400">Messages</p>
+        </div>
+        <div class="bg-white rounded-xl p-4 border border-sage-100 shadow-sm text-center">
+          <p class="text-3xl font-bold text-sage-600" id="stat-stories">0</p>
+          <p class="text-sm text-sage-400">Stories Saved</p>
+        </div>
+        <div class="bg-white rounded-xl p-4 border border-sage-100 shadow-sm text-center">
+          <p class="text-3xl font-bold text-warm-500" id="stat-streak">0</p>
+          <p class="text-sm text-sage-400">Day Streak 🔥</p>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-xl p-4 border border-sage-100 shadow-sm mb-4">
+        <h3 class="font-bold text-sage-700 mb-2">🌱 Recent Activity</h3>
+        <div id="activity-log" class="space-y-2 text-sm text-sage-500 max-h-48 overflow-y-auto">
+          <p class="italic">No activity yet. Start a conversation to begin!</p>
+        </div>
+      </div>
+
+      <div class="bg-warm-50 rounded-xl p-4 border border-warm-200">
+        <h3 class="font-bold text-warm-600 mb-2">💡 Encouragement</h3>
+        <p id="encouragement-text" class="text-bark leading-relaxed">Every word you speak in your heritage language is a gift to the next generation. Keep going! 🌿</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Settings Modal -->
+  <div id="settings-modal" class="fixed inset-0 z-50 hidden">
+    <div class="overlay absolute inset-0" onclick="closeSettings()"></div>
+    <div class="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl p-6 max-w-lg mx-auto shadow-2xl max-h-[80vh] overflow-y-auto fade-in">
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="text-xl font-bold text-sage-700">⚙️ Settings</h2>
+        <button onclick="closeSettings()" class="btn-touch p-2 rounded-full hover:bg-sage-50" aria-label="Close">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+
+      <label class="block mb-4">
+        <span class="text-sage-600 font-semibold block mb-1">Your Name</span>
+        <input id="set-name" type="text" class="w-full border-2 border-sage-200 rounded-xl px-4 py-3 focus:border-sage-500 focus:outline-none bg-warm-50">
+      </label>
+
+      <label class="block mb-4">
+        <span class="text-sage-600 font-semibold block mb-1">Heritage Language</span>
+        <input id="set-language" type="text" class="w-full border-2 border-sage-200 rounded-xl px-4 py-3 focus:border-sage-500 focus:outline-none bg-warm-50">
+      </label>
+
+      <label class="block mb-4">
+        <span class="text-sage-600 font-semibold block mb-1">Comfort Level</span>
+        <select id="set-level" class="w-full border-2 border-sage-200 rounded-xl px-4 py-3 focus:border-sage-500 focus:outline-none bg-warm-50">
+          <option value="beginner">🌱 Beginner</option>
+          <option value="intermediate">🌿 Intermediate</option>
+          <option value="advanced">🌳 Advanced</option>
+        </select>
+      </label>
+
+      <label class="block mb-4">
+        <span class="text-sage-600 font-semibold block mb-1">Speaking Speed</span>
+        <input id="set-speed" type="range" min="1" max="5" value="2" class="w-full speed-slider accent-sage-500">
+      </label>
+
+      <label class="block mb-4">
+        <span class="text-sage-600 font-semibold block mb-1">Family Topics</span>
+        <textarea id="set-topics" rows="3" class="w-full border-2 border-sage-200 rounded-xl px-4 py-3 focus:border-sage-500 focus:outline-none bg-warm-50 resize-none"></textarea>
+      </label>
+
+      <label class="block mb-4">
+        <span class="text-sage-600 font-semibold block mb-1">Text Size</span>
+        <select id="set-textsize" onchange="applyTextSize(this.value)" class="w-full border-2 border-sage-200 rounded-xl px-4 py-3 focus:border-sage-500 focus:outline-none bg-warm-50">
+          <option value="18">Normal (18px)</option>
+          <option value="20">Large (20px)</option>
+          <option value="22">Extra Large (22px)</option>
+          <option value="24">Very Large (24px)</option>
+        </select>
+      </label>
+
+      <button onclick="saveSettings()" class="btn-touch w-full bg-sage-500 hover:bg-sage-600 text-white font-bold py-4 rounded-xl text-lg transition shadow mb-3">
+        💾 Save Settings
+      </button>
+
+      <button onclick="resetApp()" class="btn-touch w-full bg-red-50 hover:bg-red-100 text-red-600 font-semibold py-3 rounded-xl transition text-sm">
+        🗑️ Reset All Data
+      </button>
+    </div>
+  </div>
+
+  <!-- Loading overlay -->
+  <div id="loading-overlay" class="fixed inset-0 z-50 hidden flex items-center justify-center overlay">
+    <div class="bg-white rounded-2xl p-8 text-center shadow-2xl mx-4">
+      <div class="inline-block w-12 h-12 border-4 border-sage-300 border-t-sage-600 rounded-full animate-spin mb-4"></div>
+      <p id="loading-text" class="text-sage-600 font-semibold text-lg">Thinking…</p>
+      <p class="text-sage-400 text-sm mt-1">Please wait a moment 🌿</p>
+    </div>
+  </div>
+
+</div>
+
+<script>
+(function() {
+  'use strict';
+
+  // ─── State ───
+  const STORAGE_KEY = 'heritage_companion_data';
+  let state = loadState();
+
+  function defaultState() {
+    return {
+      onboarded: false,
+      name: '',
+      language: '',
+      level: 'beginner',
+      speed: 2,
+      topics: '',
+      textSize: 18,
+      chatHistory: [],
+      stories: [],
+      phrases: {},
+      stats: { sessions: 0, messages: 0, stories: 0, streak: 0, lastDate: null },
+      activityLog: []
+    };
+  }
+
+  function loadState() {
+    try {
+      const d = localStorage.getItem(STORAGE_KEY);
+      if (d) {
+        const parsed = JSON.parse(d);
+        return { ...defaultState(), ...parsed };
+      }
+    } catch(e) {}
+    return defaultState();
+  }
+
+  function saveState() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  }
+
+  // ─── AI Call Helper ───
+  async function callAI(alias, params, retries = 3) {
+    const startTime = Date.now();
+    for (let attempt = 0; attempt < retries; attempt++) {
+      try {
+        const res = await fetch('https://16504442930.work/run_prompt', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ alias, params })
+        });
+        if (!res.ok) {
+          const errText = await res.text();
+          if (attempt === retries - 1) {
+            // Format error with AI
+            try {
+              const errRes = await fetch('https://16504442930.work/run_prompt', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  alias: 'genericAI',
+                  params: {
+                    prompt: `Reformat this API error into a friendly, encouraging message for an elderly user. Include simple steps they can try. Also include the full technical details at the end in smaller text. Error: ${errText}. Return JSON with key "friendlyError" as a string.`
+                  }
+                })
+              });
+              if (errRes.ok) {
+                const errData = await errRes.json();
+                throw new Error(errData.friendlyError || errText);
+              }
+            } catch(e2) {}
+            throw new Error(`Something went wrong. Please try again in a moment. (Technical: ${errText})`);
+          }
+          await new Promise(r => setTimeout(r, 1000 * (attempt + 1)));
+          continue;
+        }
+        const data = await res.json();
+        const elapsed = Date.now() - startTime;
+        // Track tokens and time
+        window.aiTotalInputTokens += (data.input_tokens || 0);
+        window.aiTotalOutputTokens += (data.output_tokens || 0);
+        window.aiTotalTime += elapsed;
+        if (!window.aiTimeByAlias[alias]) window.aiTimeByAlias[alias] = 0;
+        window.aiTimeByAlias[alias] += elapsed;
+        return data;
+      } catch(e) {
+        if (attempt === retries - 1) throw e;
+        await new Promise(r => setTimeout(r, 1000 * (attempt + 1)));
+      }
+    }
+  }
+
+  // ─── Init ───
+  function init() {
+    if (state.onboarded) {
+      showMain();
+    } else {
+      document.getElementById('onboarding').classList.remove('hidden');
+    }
+    if (state.textSize) applyTextSize(state.textSize);
+    updateStreak();
+  }
+
+  window.completeOnboarding = function() {
+    const name = document.getElementById('ob-name').value.trim();
+    const language = document.getElementById('ob-language').value.trim();
+    const level = document.getElementById('ob-level').value;
+    const speed = parseInt(document.getElementById('ob-speed').value);
+    const topics = document.getElementById('ob-topics').value.trim();
+
+    if (!name) { alert('Please enter your name 😊'); return; }
+    if (!language) { alert('Please enter your heritage language 😊'); return; }
+
+    state.name = name;
+    state.language = language;
+    state.level = level;
+    state.speed = speed;
+    state.topics = topics;
+    state.onboarded = true;
+    state.stats.sessions++;
+    logActivity(`🌿 Started Heritage Companion journey`);
+    saveState();
+
+    document.getElementById('onboarding').classList.add('hidden');
+    showMain();
+  };
+
+  function showMain() {
+    document.getElementById('main-content').classList.remove('hidden');
+    document.getElementById('session-speed').value = state.speed;
+    updateSpeedLabel(state.speed);
+    updateStats();
+    renderStories();
+    switchTab('converse');
+
+    if (state.chatHistory.length === 0) {
+      addSystemMessage(`Welcome back, ${state.name}! 🌿 I'm here to help you practice ${state.language}. Choose a practice mode above and let's begin!`);
+    } else {
+      renderChatHistory();
+    }
+  }
+
+  // ─── Tabs ───
+  window.switchTab = function(tab) {
+    ['converse', 'stories', 'phrases', 'progress'].forEach(t => {
+      document.getElementById('panel-' + t).classList.toggle('hidden', t !== tab);
+      document.getElementById('tab-' + t).classList.toggle('tab-active', t === tab);
+    });
+    if (tab === 'progress') {
+      updateStats();
+      generateEncouragement();
+    }
+  };
+
+  // ─── Chat ───
+  function renderChatHistory() {
+    const area = document.getElementById('chat-area');
+    area.innerHTML = '';
+    if (state.chatHistory.length === 0) {
+      area.innerHTML = `<div id="chat-welcome" class="text-center py-8 text-sage-400">
+        <p class="text-4xl mb-2">🌿</p>
+        <p class="text-lg font-semibold">Ready to practice?</p>
+        <p class="text-sm mt-1">Type a message or tap the microphone to speak</p>
+      </div>`;
+      return;
+    }
+    state.chatHistory.forEach(msg => {
+      appendChatBubble(msg.role, msg.text, false);
+    });
+    area.scrollTop = area.scrollHeight;
+  }
+
+  function appendChatBubble(role, text, scroll = true) {
+    const area = document.getElementById('chat-area');
+    const welcome = document.getElementById('chat-welcome');
+    if (welcome) welcome.remove();
+
+    const div = document.createElement('div');
+    div.className = `flex ${role === 'user' ? 'justify-end' : 'justify-start'} fade-in`;
+
+    const bubble = document.createElement('div');
+    bubble.className = `chat-bubble rounded-2xl px-4 py-3 ${
+      role === 'user' 
+        ? 'bg-sage-500 text-white rounded-br-md' 
+        : role === 'system'
+          ? 'bg-warm-100 text-bark rounded-bl-md border border-warm-200'
+          : 'bg-white text-bark rounded-bl-md border border-sage-100 shadow-sm'
+    }`;
+    bubble.innerHTML = formatMessage(text);
+    div.appendChild(bubble);
+    area.appendChild(div);
+
+    if (scroll) area.scrollTop = area.scrollHeight;
+  }
+
+  function formatMessage(text) {
+    return text.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+  }
+
+  function addSystemMessage(text) {
+    appendChatBubble('system', text);
+    state.chatHistory.push({ role: 'system', text, time: Date.now() });
+    saveState();
+  }
+
+  window.sendMessage = async function() {
+    const input = document.getElementById('chat-input');
+    const text = input.value.trim();
+    if (!text) return;
+
+    input.value = '';
+    appendChatBubble('user', text);
+    state.chatHistory.push({ role: 'user', text, time: Date.now() });
+    state.stats.messages++;
+    logActivity(`💬 Sent a message in conversation`);
+    saveState();
+
+    showLoading('Preparing a response…');
+
+    try {
+      const mode = document.getElementById('converse-mode').value;
+      const speedDesc = ['very slow and simple', 'slow and gentle', 'moderate pace', 'natural conversational pace', 'fast and natural'][state.speed - 1];
+
+      let modeInstruction = '';
+      switch(mode) {
+        case 'freeChat':
+          modeInstruction = 'Have a free, gentle conversation. Mix the heritage language with English translations/explanations.';
+          break;
+        case 'familyDialog':
+          modeInstruction = 'Simulate a family dialog. Act as a patient family member. Use common family interaction phrases.';
+          break;
+        case 'memoryShare':
+          modeInstruction = 'Encourage the user to share memories. Ask gentle follow-up questions about their past, childhood, or family traditions.';
+          break;
+        case 'dailyPhrases':
+          modeInstruction = 'Teach practical daily phrases. After each response, suggest 1-2 useful phrases with pronunciation guides.';
+          break;
+      }
+
+      const recentChat = state.chatHistory.slice(-10).map(m => `${m.role}: ${m.text}`).join('\n');
+
+      const prompt = `You are a warm, patient heritage language tutor helping an elderly person named ${state.name} practice ${state.language}. Their level is ${state.level}. They prefer ${speedDesc} speaking pace. Their family topics of interest: ${state.topics || 'general family life'}.
+
+${modeInstruction}
+
+Guidelines:
+- Be very warm, encouraging, and patient
+- Use simple sentences appropriate for their level
+- Always provide translations in parentheses when using ${state.language}
+- For beginner level: use mostly English with key heritage words
+- For intermediate: mix both languages equally
+- For advanced: use mostly heritage language with some English
+- Include pronunciation hints in brackets when helpful
+- End with a gentle question or prompt to continue the conversation
+- Keep responses concise (2-4 sentences max)
+
+Recent conversation:
+${recentChat}
+
+The user just said: "${text}"
+
+Respond naturally. Return a JSON object with these exact keys:
+- "response" (string): your conversational response
+- "heritagePhrase" (string): one key phrase from your response in ${state.language} only (empty string if not applicable)
+- "translation" (string): English translation of the heritage phrase (empty string if not applicable)`;
+
+      const data = await callAI('genericAI', { prompt });
+      hideLoading();
+
+      let responseText = data.response || 'I appreciate you sharing that! Let\'s continue our conversation. 🌿';
+      
+      appendChatBubble('assistant', responseText);
+      state.chatHistory.push({ role: 'assistant', text: responseText, time: Date.now() });
+
+      if (data.heritagePhrase && data.translation) {
+        const phraseNote = `📌 **Key phrase:** ${data.heritagePhrase} — ${data.translation}`;
+        appendChatBubble('system', phraseNote);
+        state.chatHistory.push({ role: 'system', text: phraseNote, time: Date.now() });
+      }
+
+      saveState();
+    } catch(e) {
+      hideLoading();
+      appendChatBubble('system', `😔 I had trouble responding. Please try again. (${e.message})`);
+    }
+  };
+
+  window.updateConversationMode = function() {
+    const mode = document.getElementById('converse-mode').value;
+    const modeNames = {
+      freeChat: 'Free Conversation',
+      familyDialog: 'Family Dialog Practice',
+      memoryShare: 'Memory Sharing',
+      dailyPhrases: 'Daily Phrases'
+    };
+    addSystemMessage(`🎭 Switched to **${modeNames[mode]}** mode. Let's begin!`);
+  };
+
+  // ─── Speed ───
+  window.updateSessionSpeed = function(val) {
+    state.speed = parseInt(val);
+    updateSpeedLabel(val);
+    saveState();
+  };
+
+  function updateSpeedLabel(val) {
+    const labels = ['Very Slow', 'Slow', 'Moderate', 'Natural', 'Fast'];
+    const el = document.getElementById('speed-label');
+    if (el) el.textContent = labels[val - 1];
+  }
+
+  // ─── Stories ───
+  window.generateStoryPrompt = async function() {
+    showLoading('Creating a story prompt…');
+    try {
+      const prompt = `Generate a culturally meaningful storytelling prompt for an elderly ${state.language} speaker named ${state.name}. Their interests include: ${state.topics || 'family life, traditions, childhood memories'}.
+
+The prompt should:
+- Be warm and inviting
+- Connect to family or cultural traditions
+- Be easy to understand
+- Encourage sharing a personal memory
+- Include a version in ${state.language} if possible
+
+Return JSON with exact keys:
+- "promptEnglish" (string): the prompt in English
+- "promptHeritage" (string): the prompt translated into ${state.language} (or a close approximation)
+- "hint" (string): a gentle hint to help them get started`;
+
+      const data = await callAI('genericAI', { prompt });
+      hideLoading();
+
+      document.getElementById('story-prompt-area').classList.remove('hidden');
+      document.getElementById('story-prompt-text').textContent = data.promptEnglish || 'Tell us about a special family tradition from your childhood…';
+      document.getElementById('story-prompt-translation').textContent = data.promptHeritage ? `${state.language}: ${data.promptHeritage}` : '';
+
+      if (data.hint) {
+        document.getElementById('story-prompt-text').textContent += `\n\n💡 Hint: ${data.hint}`;
+      }
+
+      logActivity('✨ Generated a story prompt');
+      saveState();
+    } catch(e) {
+      hideLoading();
+      alert('Could not generate a prompt. Please try again! 🌿');
+    }
+  };
+
+  window.saveStory = function() {
+    const text = document.getElementById('story-input').value.trim();
+    if (!text) { alert('Please write something first! 📝'); return; }
+
+    state.stories.unshift({
+      text,
+      date: new Date().toLocaleDateString(),
+      timestamp: Date.now()
+    });
+    state.stats.stories++;
+    logActivity('📖 Saved a new story');
+    saveState();
+    document.getElementById('story-input').value = '';
+    renderStories();
+  };
+
+  function renderStories() {
+    const container = document.getElementById('saved-stories');
+    if (!container) return;
+    if (state.stories.length === 0) {
+      container.innerHTML = '<p class="text-sage-400 text-center py-4 italic">No stories saved yet. Your stories will appear here! 📚</p>';
+      return;
+    }
+    container.innerHTML = state.stories.map((s, i) => `
+      <div class="bg-white rounded-xl p-4 border border-sage-100 shadow-sm">
+        <div class="flex justify-between items-start mb-2">
+          <span class="text-xs text-sage-400">${s.date}</span>
+          <button onclick="deleteStory(${i})" class="text-red-300 hover:text-red-500 text-xs btn-touch p-1" aria-label="Delete">🗑️</button>
+        </div>
+        <p class="text-bark leading-relaxed">${s.text.substring(0, 300)}${s.text.length > 300 ? '…' : ''}</p>
+      </div>
+    `).join('');
+  }
+
+  window.deleteStory = function(index) {
+    if (confirm('Delete this story?')) {
+      state.stories.splice(index, 1);
+      state.stats.stories = Math.max(0, state.stats.stories - 1);
+      saveState();
+      renderStories();
+    }
+  };
+
+  // ─── Phrases ───
+  window.loadPhraseCategory = async function(category) {
+    // Update button styles
+    document.querySelectorAll('.phrase-cat-btn').forEach(btn => {
+      btn.classList.toggle('bg-sage-500', btn.dataset.cat === category);
+      btn.classList.toggle('text-white', btn.dataset.cat === category);
+      btn.classList.toggle('bg-sage-100', btn.dataset.cat !== category);
+      btn.classList.toggle('text-sage-700', btn.dataset.cat !== category);
+    });
+
+    // Check cache
+    if (state.phrases[category]) {
+      renderPhrases(state.phrases[category]);
+      return;
+    }
+
+    document.getElementById('phrases-loading').classList.remove('hidden');
+    document.getElementById('phrases-list').innerHTML = '';
+
+    try {
+      const catNames = { greetings: 'greetings and farewells', family: 'family interactions', food: 'food and meals', feelings: 'expressing feelings and love', traditions: 'cultural traditions and holidays' };
+
+      const prompt = `Generate 8 useful everyday ${catNames[category]} phrases in ${state.language} for an elderly ${state.level}-level speaker named ${state.name}. 
+
+For each phrase provide:
+- The phrase in ${state.language}
+- English translation
+- A simple pronunciation guide in English letters
+- A brief context note about when to use it
+
+Return a JSON object with key "phrases" which is an array of objects, each having these exact keys:
+- "heritage" (string): the phrase in ${state.language}
+- "english" (string): English translation
+- "pronunciation" (string): pronunciation guide using English letters
+- "context" (string): when to use this phrase (1 short sentence)`;
+
+      const data = await callAI('genericAI', { prompt });
+      document.getElementById('phrases-loading').classList.add('hidden');
+
+      const phrases = data.phrases || [];
+      state.phrases[category] = phrases;
+      saveState();
+      renderPhrases(phrases);
+      logActivity(`🗣️ Learned ${category} phrases`);
+      saveState();
+    } catch(e) {
+      document.getElementById('phrases-loading').classList.add('hidden');
+      document.getElementById('phrases-list').innerHTML = '<p class="text-red-400 text-center">Could not load phrases. Please try again! 🌿</p>';
+    }
+  };
+
+  function renderPhrases(phrases) {
+    const container = document.getElementById('phrases-list');
+    if (!phrases.length) {
+      container.innerHTML = '<p class="text-sage-400 text-center py-4">No phrases available.</p>';
+      return;
+    }
+    container.innerHTML = phrases.map(p => `
+      <div class="bg-white rounded-xl p-4 border border-sage-100 shadow-sm cursor-pointer hover:border-sage-300 transition" onclick="practicePhrase('${escapeAttr(p.heritage)}', '${escapeAttr(p.english)}')">
+        <p class="text-lg font-bold text-sage-700">${p.heritage || ''}</p>
+        <p class="text-bark mt-1">${p.english || ''}</p>
+        <p class="text-sage-400 text-sm mt-1 italic">🔊 ${p.pronunciation || ''}</p>
+        <p class="text-warm-500 text-xs mt-2">💡 ${p.context || ''}</p>
+      </div>
+    `).join('');
+  }
+
+  function escapeAttr(s) {
+    return (s || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+  }
+
+  window.practicePhrase = function(heritage, english) {
+    switchTab('converse');
+    const text = `I'd like to practice this phrase: "${heritage}" (${english})`;
+    document.getElementById('chat-input').value = text;
+    sendMessage();
+  };
+
+  // ─── Progress ───
+  function updateStats() {
+    document.getElementById('stat-sessions').textContent = state.stats.sessions;
+    document.getElementById('stat-messages').textContent = state.stats.messages;
+    document.getElementById('stat-stories').textContent = state.stats.stories;
+    document.getElementById('stat-streak').textContent = state.stats.streak;
+
+    const logEl = document.getElementById('activity-log');
+    if (state.activityLog.length === 0) {
+      logEl.innerHTML = '<p class="italic">No activity yet. Start a conversation to begin!</p>';
+    } else {
+      logEl.innerHTML = state.activityLog.slice(0, 20).map(a => `<p>${a.text} <span class="text-sage-300 text-xs">${a.date}</span></p>`).join('');
+    }
+  }
+
+  function updateStreak() {
+    const today = new Date().toDateString();
+    if (state.stats.lastDate !== today) {
+      const yesterday = new Date(Date.now() - 86400000).toDateString();
+      if (state.stats.lastDate === yesterday) {
+        state.stats.streak++;
+      } else if (state.stats.lastDate !== today) {
+        state.stats.streak = 1;
+      }
+      state.stats.lastDate = today;
+      state.stats.sessions++;
+      saveState();
+    }
+  }
+
+  function logActivity(text) {
+    state.activityLog.unshift({
+      text,
+      date: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    });
+    if (state.activityLog.length > 50) state.activityLog = state.activityLog.slice(0, 50);
+  }
+
+  async function generateEncouragement() {
+    try {
+      const prompt = `Generate a short, warm, encouraging message (2-3 sentences) for an elderly heritage language learner named ${state.name} who speaks ${state.language}. They have completed ${state.stats.sessions} sessions and sent ${state.stats.messages} messages. Their streak is ${state.stats.streak} days. Be genuinely encouraging and mention the importance of preserving heritage languages for future generations. Return JSON with key "message" as a string.`;
+
+      const data = await callAI('genericAI', { prompt });
+      if (data.message) {
+        document.getElementById('encouragement-text').textContent = data.message;
+      }
+    } catch(e) {
+      // Keep default message
+    }
+  }
+
+  // ─── Settings ───
+  window.openSettings = function() {
+    document.getElementById('set-name').value = state.name;
+    document.getElementById('set-language').value = state.language;
+    document.getElementById('set-level').value = state.level;
+    document.getElementById('set-speed').value = state.speed;
+    document.getElementById('set-topics').value = state.topics;
+    document.getElementById('set-textsize').value = state.textSize || 18;
+    document.getElementById('settings-modal').classList.remove('hidden');
+  };
+
+  window.closeSettings = function() {
+    document.getElementById('settings-modal').classList.add('hidden');
+  };
+
+  window.saveSettings = function() {
+    state.name = document.getElementById('set-name').value.trim();
+    state.language = document.getElementById('set-language').value.trim();
+    state.level = document.getElementById('set-level').value;
+    state.speed = parseInt(document.getElementById('set-speed').value);
+    state.topics = document.getElementById('set-topics').value.trim();
+    state.textSize = parseInt(document.getElementById('set-textsize').value);
+    // Clear cached phrases when language changes
+    state.phrases = {};
+    saveState();
+    applyTextSize(state.textSize);
+    document.getElementById('session-speed').value = state.speed;
+    updateSpeedLabel(state.speed);
+    closeSettings();
+    addSystemMessage(`⚙️ Settings updated! Let's continue practicing ${state.language}. 🌿`);
+  };
+
+  window.applyTextSize = function(size) {
+    document.documentElement.style.fontSize = size + 'px';
+    state.textSize = parseInt(size);
+  };
+
+  window.resetApp = function() {
+    if (confirm('This will delete all your data, stories, and conversation history. Are you sure?')) {
+      localStorage.removeItem(STORAGE_KEY);
+      location.reload();
+    }
+  };
+
+  // ─── Loading ───
+  function showLoading(text) {
+    document.getElementById('loading-text').textContent = text || 'Thinking…';
+    document.getElementById('loading-overlay').classList.remove('hidden');
+  }
+
+  function hideLoading() {
+    document.getElementById('loading-overlay').classList.add('hidden');
+  }
+
+  // ─── Keyboard support ───
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' && !e.shiftKey && document.activeElement === document.getElementById('chat-input')) {
+      e.preventDefault();
+      sendMessage();
+    }
+  });
+
+  // Initialize
+  init();
+})();
+</script>
+</body>
+</html>
